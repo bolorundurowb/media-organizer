@@ -1,5 +1,6 @@
 mod utils;
 mod models;
+mod processors;
 
 use std::path::Path;
 
@@ -23,8 +24,5 @@ fn main() {
         }
     }
 
-    println!("Found {} files in {:?}", files.len(), directory_path);
-    println!("Found {} directories in {:?}", directories.len(), directory_path);
-    println!("Directories: {:?}", directories[0]);
-    println!("Files: {:?}", files[0]);
+
 }
