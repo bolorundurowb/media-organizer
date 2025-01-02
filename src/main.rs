@@ -1,3 +1,6 @@
+mod utils;
+mod models;
+
 use std::path::Path;
 
 fn main() {
@@ -19,4 +22,9 @@ fn main() {
             files.push(entry.path());
         }
     }
+
+    println!("Found {} files in {:?}", files.len(), directory_path);
+    println!("Found {} directories in {:?}", directories.len(), directory_path);
+    println!("Directories: {:?}", directories[0]);
+    println!("Files: {:?}", files[0]);
 }
