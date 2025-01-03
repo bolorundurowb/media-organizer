@@ -1,5 +1,5 @@
-use std::path::Path;
+use std::fs::DirEntry;
 
-fn process_files(file_paths: Vec<Path>) {
-    todo!();
+pub fn process_files(file_paths: Vec<DirEntry>) {
+    // todo!();
 }

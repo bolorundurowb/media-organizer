@@ -19,6 +19,6 @@ struct MediaMetadata {
 }
 
 pub struct ParsedFileData {
-    file_path: Path,
+    file_path: String,
     metadata: Metadata,
 }

@@ -1,7 +1,9 @@
 mod utils;
 mod models;
 mod processors;
+mod constants;
 
+use std::fs;
 use std::path::Path;
 
 fn main() {
@@ -14,15 +16,16 @@ fn main() {
     let mut directories = vec!();
     let mut files = vec!();
 
-    for entry in std::fs::read_dir(directory_path).expect("Failed to read directory") {
+    for entry in fs::read_dir(directory_path).expect("Failed to read directory") {
         let entry = entry.expect("Failed to read directory entry");
 
         if entry.path().is_dir() {
-            directories.push(entry.path());
+            directories.push(entry);
         } else {
-            files.push(entry.path());
+            files.push(entry);
         }
     }
 
-
+    processors::directories::process_directories(directories);
+    processors::files::process_files(files);
 }
