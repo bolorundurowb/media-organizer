@@ -44,11 +44,11 @@ fn process_directory(directory_path: DirEntry) {
         let mut movie_file_name = movie_file_entry.file_name().to_str().map(String::from).unwrap_or_default();
 
         if directory_name.len() > movie_file_name.len() {
-            movie_file_name = directory_name.to_str().map(String::from).unwrap_or_default();
+            movie_file_name = format!("{}.{}", directory_name.to_str().map(String::from).unwrap_or_default(), &movie_file_entry.path().extension().unwrap().to_str().map(String::from).unwrap_or_default());
         }
 
-        let parsed_movie_metadata = parse_to_movie_metadata(&movie_file_name).expect("Failed to parse movie metadata");
-        println!("Movie file name: {}, Metadata: {:?}", movie_file_name, parsed_movie_metadata);
+        let parsed_movie_metadata = parse_to_movie_metadata(&movie_file_name);
+        println!("{:?}", parsed_movie_metadata)
 
         // let unified_file_name =
     }
