@@ -1,5 +1,5 @@
 use crate::constants::{SUBTITLE_FILE_EXTENSION, VIDEO_FILE_EXTENSIONS};
-use crate::utils::{get_dir_entry, parse_to_movie_metadata};
+use crate::utils::{parse_to_movie_metadata};
 use std::fs::DirEntry;
 use std::path::Path;
 use std::{fs, io};
