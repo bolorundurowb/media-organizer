@@ -23,12 +23,12 @@ impl MediaEncodingFormat {
 #[derive(Debug)]
 pub struct MovieMetadata {
     pub(crate) original_file_name: String,
-    pub(crate)media_name: String,
-    pub(crate)release_year: Option<u8>,
-    pub(crate)encoding_format: Option<MediaEncodingFormat>,
-    pub(crate)resolution: Option<u8>,
-    pub(crate)additional_data: Vec<String>,
-    pub(crate)file_extension: String,
+    pub(crate) media_name: String,
+    pub(crate) release_year: Option<u8>,
+    pub(crate) encoding_format: Option<MediaEncodingFormat>,
+    pub(crate) resolution: Option<u8>,
+    pub(crate) additional_data: Vec<String>,
+    pub(crate) file_extension: String,
 }
 
 pub struct ParsedMovieFileData {

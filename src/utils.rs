@@ -35,3 +35,7 @@ pub fn get_dir_entry(path: &Path) -> io::Result<DirEntry> {
         .map_err(|e| e)
 
 }
+
+fn split_file_name_by_delimiter(file_name: &str, delimiter: &str) -> Option<(Vec<String>, String)> {
+
+}
