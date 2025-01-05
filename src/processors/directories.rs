@@ -1,5 +1,5 @@
 use crate::constants::{SUBTITLE_FILE_EXTENSION, VIDEO_FILE_EXTENSIONS};
-use crate::utils::get_dir_entry;
+use crate::utils::{get_dir_entry, parse_to_movie_metadata};
 use std::fs::DirEntry;
 use std::path::Path;
 use std::{fs, io};
@@ -37,8 +37,20 @@ fn process_directory(directory_path: DirEntry) {
         let subtitle_entry = get_subtitle_entry(&directory_path);
 
         // delete every file except the movie and its subtitle
-        delete_except(directory_path.path(), &movie_file_entry, &subtitle_entry)
-            .expect("Failed to clean movie directory");
+        // delete_except(directory_path.path(), &movie_file_entry, &subtitle_entry)
+        //     .expect("Failed to clean movie directory");
+
+        // determine name to be parsed
+        let mut movie_file_name = movie_file_entry.file_name().to_str().map(String::from).unwrap_or_default();
+
+        if directory_name.len() > movie_file_name.len() {
+            movie_file_name = directory_name.to_str().map(String::from).unwrap_or_default();
+        }
+
+        let parsed_movie_metadata = parse_to_movie_metadata(&movie_file_name).expect("Failed to parse movie metadata");
+        println!("Movie file name: {}, Metadata: {:?}", movie_file_name, parsed_movie_metadata);
+
+        // let unified_file_name =
     }
 }
 
@@ -52,9 +64,7 @@ fn delete_except<P: AsRef<Path>>(
         let path = entry.path();
 
         // Check if this is a file/directory to keep
-        if path == keep.path()
-            || optional_keep.as_ref().map_or(false, |e| e.path() == path)
-        {
+        if path == keep.path() || optional_keep.as_ref().map_or(false, |e| e.path() == path) {
             continue;
         }
 
@@ -71,8 +81,8 @@ fn delete_except<P: AsRef<Path>>(
 
 fn get_movie_entry(dir_path: &Path) -> Option<DirEntry> {
     fs::read_dir(dir_path)
-        .ok()? // Handle potential error from read_dir
-        .filter_map(|entry| entry.ok()) // Ignore entries that failed to read
+        .ok()?
+        .filter_map(|entry| entry.ok())
         .filter(|entry| {
             let path = entry.path();
             if let Some(ext) = path.extension() {
@@ -82,15 +92,14 @@ fn get_movie_entry(dir_path: &Path) -> Option<DirEntry> {
             }
         })
         .max_by_key(|entry| entry.metadata().map(|meta| meta.len()).unwrap_or(0))
-    // Largest file
 }
 
 fn get_subtitle_entry(dir_entry: &DirEntry) -> Option<DirEntry> {
-    let dir_entries = fs::read_dir(dir_entry.path()).ok()?; // Handle potential errors from read_dir
+    let dir_entries = fs::read_dir(dir_entry.path()).ok()?;
 
     // Collect subtitle files in the current directory
     let mut subtitle_files: Vec<DirEntry> = dir_entries
-        .filter_map(Result::ok) // Ignore entries that failed to read
+        .filter_map(Result::ok)
         .filter(|entry| {
             entry.path().is_file()
                 && entry
@@ -115,7 +124,7 @@ fn get_subtitle_entry(dir_entry: &DirEntry) -> Option<DirEntry> {
     }
 
     // Recursively search subdirectories for subtitle files
-    let dir_entries = fs::read_dir(dir_entry.path()).ok()?; // Re-iterate over directory entries
+    let dir_entries = fs::read_dir(dir_entry.path()).ok()?;
     for entry in dir_entries.filter_map(Result::ok) {
         if entry.path().is_dir() {
             if let Some(subtitle) = get_subtitle_entry(&entry) {

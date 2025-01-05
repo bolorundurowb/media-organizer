@@ -2,10 +2,19 @@ use std::error::Error;
 use std::fs::DirEntry;
 use std::{fs, io};
 use std::path::{Path};
-use crate::models::ParsedFileData;
+use crate::models::{MovieMetadata, ParsedMovieFileData};
 
-pub fn parse_file_path(file_path: &Path) -> Result<ParsedFileData, Box<dyn Error>> {
-    todo!();
+pub fn parse_to_movie_metadata(file_name: &str) -> Result<MovieMetadata, Box<dyn Error>> {
+    // todo!();
+   Ok(MovieMetadata {
+       original_file_name: "".to_string(),
+       media_name: "".to_string(),
+       release_year: None,
+       encoding_format: None,
+       resolution: None,
+       additional_data: vec![],
+       file_extension: "".to_string(),
+   })
 }
 
 pub fn get_dir_entry(path: &Path) -> io::Result<DirEntry> {
