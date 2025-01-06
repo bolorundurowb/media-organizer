@@ -1,8 +1,9 @@
 use crate::constants::{SUBTITLE_FILE_EXTENSION, VIDEO_FILE_EXTENSIONS};
-use crate::utils::{parse_to_movie_metadata};
+use crate::utils::{merge_base_with_file, parse_to_movie_metadata};
 use std::fs::DirEntry;
 use std::path::Path;
 use std::{fs, io};
+use crate::models::MovieMetadata;
 
 pub fn process_directories(directory_paths: Vec<DirEntry>) {
     for directory in directory_paths {
@@ -37,21 +38,75 @@ fn process_directory(directory_path: DirEntry) {
         let subtitle_entry = get_subtitle_entry(&directory_path);
 
         // delete every file except the movie and its subtitle
-        // delete_except(directory_path.path(), &movie_file_entry, &subtitle_entry)
-        //     .expect("Failed to clean movie directory");
+        delete_except(directory_path.path(), &movie_file_entry, &subtitle_entry)
+            .expect("Failed to clean movie directory");
 
         // determine name to be parsed
-        let mut movie_file_name = movie_file_entry.file_name().to_str().map(String::from).unwrap_or_default();
+        let mut movie_file_name = movie_file_entry
+            .file_name()
+            .to_str()
+            .map(String::from)
+            .unwrap_or_default();
 
         if directory_name.len() > movie_file_name.len() {
-            movie_file_name = format!("{}.{}", directory_name.to_str().map(String::from).unwrap_or_default(), &movie_file_entry.path().extension().unwrap().to_str().map(String::from).unwrap_or_default());
+            movie_file_name = format!(
+                "{}.{}",
+                directory_name
+                    .to_str()
+                    .map(String::from)
+                    .unwrap_or_default(),
+                &movie_file_entry
+                    .path()
+                    .extension()
+                    .unwrap()
+                    .to_str()
+                    .map(String::from)
+                    .unwrap_or_default()
+            );
         }
 
         let parsed_movie_metadata = parse_to_movie_metadata(&movie_file_name);
-        println!("{:?}", parsed_movie_metadata)
+        let composed_file_name = format_movie_metadata(&parsed_movie_metadata);
 
-        // let unified_file_name =
+        // rename the files
+        let movie_dest_path = merge_base_with_file(&directory_path.path(), &format!(
+            "{}.{}",
+            composed_file_name, &parsed_movie_metadata.file_extension
+        ));
+        fs::rename(
+            movie_file_entry.path(),
+            movie_dest_path,
+        )
+        .expect("Failed to rename the movie file");
+
+        if subtitle_entry.is_some() {
+            let sub_dest_path = merge_base_with_file(&directory_path.path(), &format!("{}.{}", composed_file_name, SUBTITLE_FILE_EXTENSION));
+            fs::rename(
+                subtitle_entry.unwrap().path(),
+                sub_dest_path,
+            )
+            .expect("Failed to rename the subtitle file");
+        }
+
+        // rename the folder
+        let movie_dir_dest_path = merge_base_with_file(directory_path.path().parent().unwrap(), &composed_file_name);
+        fs::rename(directory_path.path(), &movie_dir_dest_path)
+            .expect(format!("Failed to rename the movie directory {}", &movie_dir_dest_path).as_str());
     }
+}
+
+fn format_movie_metadata(metadata: &MovieMetadata) -> String {
+    let mut result = metadata.media_name.clone();
+
+    if let Some(year) = metadata.release_year {
+        result.push_str(&format!(" ({})", year));
+    }
+
+    if let Some(resolution) = metadata.resolution {
+        result.push_str(&format!(" [{}p]", resolution));
+    }
+
+    result
 }
 
 fn delete_except<P: AsRef<Path>>(

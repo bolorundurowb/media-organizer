@@ -1,9 +1,15 @@
+use std::path::Path;
 use crate::models::{MediaEncodingFormat, MovieMetadata};
 use regex::Regex;
 
 pub fn parse_to_movie_metadata(file_name: &str) -> MovieMetadata {
     let (raw_file_name, file_extension) = get_raw_file_name_and_extension(file_name);
     compose_movie_metadata(raw_file_name, file_extension)
+}
+
+pub fn merge_base_with_file(base_path: &Path, file_name: &str) -> String {
+    let merged_path = base_path.join(file_name);
+    merged_path.to_string_lossy().into_owned()
 }
 
 fn compose_movie_metadata(raw_file_name: &str, file_extension: String) -> MovieMetadata {
