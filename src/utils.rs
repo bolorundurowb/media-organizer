@@ -1,6 +1,6 @@
-use std::path::Path;
 use crate::models::{MediaEncodingFormat, MovieMetadata};
 use regex::Regex;
+use std::path::Path;
 
 pub fn parse_to_movie_metadata(file_name: &str) -> MovieMetadata {
     let (raw_file_name, file_extension) = get_raw_file_name_and_extension(file_name);
@@ -10,6 +10,30 @@ pub fn parse_to_movie_metadata(file_name: &str) -> MovieMetadata {
 pub fn merge_base_with_file(base_path: &Path, file_name: &str) -> String {
     let merged_path = base_path.join(file_name);
     merged_path.to_string_lossy().into_owned()
+}
+
+pub fn format_movie_metadata(metadata: &MovieMetadata) -> String {
+    let mut result = metadata.media_name.clone();
+
+    if let Some(year) = metadata.release_year {
+        result.push_str(&format!(" ({})", year));
+    }
+
+    if let Some(resolution) = metadata.resolution {
+        result.push_str(&format!(" [{}p]", resolution));
+    }
+
+    result
+}
+
+pub fn get_raw_file_name_and_extension(file_name: &str) -> (&str, String) {
+    if let Some(pos) = file_name.rfind('.') {
+        let name = &file_name[..pos];
+        let extension = file_name[pos + 1..].to_string();
+        (name, extension)
+    } else {
+        (file_name, String::new())
+    }
 }
 
 fn compose_movie_metadata(raw_file_name: &str, file_extension: String) -> MovieMetadata {
@@ -89,20 +113,12 @@ fn to_title_case(input: &str) -> String {
         .map(|word| {
             let mut chars = word.chars();
             match chars.next() {
-                Some(first) => first.to_uppercase().collect::<String>() + &chars.as_str().to_lowercase(),
+                Some(first) => {
+                    first.to_uppercase().collect::<String>() + &chars.as_str().to_lowercase()
+                }
                 None => String::new(),
             }
         })
         .collect::<Vec<_>>()
         .join(" ")
-}
-
-pub fn get_raw_file_name_and_extension(file_name: &str) -> (&str, String) {
-    if let Some(pos) = file_name.rfind('.') {
-        let name = &file_name[..pos];
-        let extension = file_name[pos + 1..].to_string();
-        (name, extension)
-    } else {
-        (file_name, String::new())
-    }
 }

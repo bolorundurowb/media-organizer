@@ -27,5 +27,5 @@ fn main() {
     }
 
     processors::directories::process_directories(directories);
-    processors::files::process_files(files);
+    processors::files::process_files(&directory_path, files);
 }
