@@ -97,7 +97,7 @@ fn to_title_case(input: &str) -> String {
         .join(" ")
 }
 
-fn get_raw_file_name_and_extension(file_name: &str) -> (&str, String) {
+pub fn get_raw_file_name_and_extension(file_name: &str) -> (&str, String) {
     if let Some(pos) = file_name.rfind('.') {
         let name = &file_name[..pos];
         let extension = file_name[pos + 1..].to_string();
