@@ -3,7 +3,6 @@ use crate::utils::{format_movie_metadata, merge_base_with_file, parse_to_movie_m
 use std::fs::DirEntry;
 use std::path::Path;
 use std::{fs, io};
-use crate::models::MovieMetadata;
 
 pub fn process_directories(directory_paths: Vec<DirEntry>) {
     for directory in directory_paths {
@@ -69,29 +68,35 @@ fn process_directory(directory_path: DirEntry) {
         let composed_file_name = format_movie_metadata(&parsed_movie_metadata);
 
         // rename the files
-        let movie_dest_path = merge_base_with_file(&directory_path.path(), &format!(
-            "{}.{}",
-            composed_file_name, &parsed_movie_metadata.file_extension
-        ));
-        fs::rename(
-            video_file_entry.path(),
-            movie_dest_path,
-        )
-        .expect("Failed to rename the movie file");
+        let movie_dest_path = merge_base_with_file(
+            &directory_path.path(),
+            &format!(
+                "{}.{}",
+                composed_file_name, &parsed_movie_metadata.file_extension
+            ),
+        );
+        fs::rename(video_file_entry.path(), movie_dest_path)
+            .expect("Failed to rename the movie file");
 
         if subtitle_entry.is_some() {
-            let sub_dest_path = merge_base_with_file(&directory_path.path(), &format!("{}.en.{}", composed_file_name, SUBTITLE_FILE_EXTENSION));
-            fs::rename(
-                subtitle_entry.unwrap().path(),
-                sub_dest_path,
-            )
-            .expect("Failed to rename the subtitle file");
+            let sub_dest_path = merge_base_with_file(
+                &directory_path.path(),
+                &format!("{}.en.{}", composed_file_name, SUBTITLE_FILE_EXTENSION),
+            );
+            fs::rename(subtitle_entry.unwrap().path(), sub_dest_path)
+                .expect("Failed to rename the subtitle file");
         }
 
         // rename the folder
-        let movie_dir_dest_path = merge_base_with_file(directory_path.path().parent().unwrap(), &composed_file_name);
-        fs::rename(directory_path.path(), &movie_dir_dest_path)
-            .expect(format!("Failed to rename the movie directory {}", &movie_dir_dest_path).as_str());
+        let movie_dir_dest_path =
+            merge_base_with_file(directory_path.path().parent().unwrap(), &composed_file_name);
+        fs::rename(directory_path.path(), &movie_dir_dest_path).expect(
+            format!(
+                "Failed to rename the movie directory {}",
+                &movie_dir_dest_path
+            )
+            .as_str(),
+        );
     }
 }
 
