@@ -3,6 +3,8 @@ use crate::utils::{format_movie_metadata, merge_base_with_file, parse_to_movie_m
 use std::fs::DirEntry;
 use std::path::Path;
 use std::{fs, io};
+use std::io::Write;
+use crate::models::MovieMetadata;
 
 pub fn process_directories(directory_paths: Vec<DirEntry>) {
     for directory in directory_paths {
@@ -87,6 +89,9 @@ fn process_directory(directory_path: DirEntry) {
                 .expect("Failed to rename the subtitle file");
         }
 
+        // add the metadata file
+        write_metadata_file(&parsed_movie_metadata, &directory_path.path()).expect("Failed to write movie metadata");
+
         // rename the folder
         let movie_dir_dest_path =
             merge_base_with_file(directory_path.path().parent().unwrap(), &composed_file_name);
@@ -98,6 +103,27 @@ fn process_directory(directory_path: DirEntry) {
             .as_str(),
         );
     }
+}
+
+fn write_metadata_file(
+    data: &MovieMetadata,
+    directory_path: &Path,
+) -> io::Result<()> {
+    // Ensure the directory exists
+    if !directory_path.exists() {
+        fs::create_dir_all(directory_path)?;
+    }
+
+    // Define the file path
+    let file_path = merge_base_with_file(&directory_path, "metadata.json");
+    let json_data = serde_json::to_string_pretty(data)
+        .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Serialization error: {}", e)))?;
+
+    // Write the JSON data to the file
+    let mut file = fs::File::create(&file_path)?;
+    file.write_all(json_data.as_bytes())?;
+
+    Ok(())
 }
 
 fn delete_except<P: AsRef<Path>>(
