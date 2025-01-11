@@ -80,7 +80,7 @@ fn process_directory(directory_path: DirEntry) {
         .expect("Failed to rename the movie file");
 
         if subtitle_entry.is_some() {
-            let sub_dest_path = merge_base_with_file(&directory_path.path(), &format!("{}.{}", composed_file_name, SUBTITLE_FILE_EXTENSION));
+            let sub_dest_path = merge_base_with_file(&directory_path.path(), &format!("{}.en.{}", composed_file_name, SUBTITLE_FILE_EXTENSION));
             fs::rename(
                 subtitle_entry.unwrap().path(),
                 sub_dest_path,

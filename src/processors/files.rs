@@ -54,7 +54,7 @@ pub fn process_files(directory_path: &Path, file_paths: Vec<DirEntry>) {
         if subtitle_entry.is_some() {
             let sub_dest_path = merge_base_with_file(
                 Path::new(&movie_directory_path),
-                &format!("{}.{}", composed_file_name, SUBTITLE_FILE_EXTENSION),
+                &format!("{}.en.{}", composed_file_name, SUBTITLE_FILE_EXTENSION),
             );
             fs::rename(subtitle_entry.unwrap().path(), sub_dest_path)
                 .expect("Failed to rename the subtitle file");
