@@ -10,54 +10,37 @@ use std::path::Path;
 pub fn process_files(directory_path: &Path, file_paths: Vec<DirEntry>) {
     let video_file_entries = filter_video_files(&file_paths);
     for video_file_entry in &video_file_entries {
-        let mut subtitle_entry: Option<&DirEntry> = None;
+        let raw_video_file_name = video_file_entry
+            .path()
+            .file_stem()
+            .unwrap()
+            .to_str()
+            .expect("Could not extract the video file name");
+
+        // create the movie directory
+        let movie_directory_path =
+            Path::new(&merge_base_with_file(&directory_path, &raw_video_file_name));
+        fs::create_dir(&movie_directory_path).expect("Failed to create the movie sub-directory");
+
+        // move the video file to the sub-directory
+        let movie_dest_path = merge_base_with_file(&movie_directory_path, &raw_video_file_name);
+        fs::rename(video_file_entry.path(), movie_dest_path)
+            .expect("Failed to move the movie file to the video sub-directory");
+
         let related_files = find_files_with_same_prefix(
             &file_paths,
             video_file_entry.file_name().to_str().unwrap(),
         );
 
         if related_files.len() > 0 {
-            for related_file in related_files {
-                // if it is not a sub, then delete it
-                if is_subtitle_file(&related_file) {
-                    subtitle_entry = Some(related_file);
-                } else {
-                    fs::remove_file(&related_file.path())
-                        .expect("Failed to delete unrelated media file");
-                }
+            for related_file_entry in related_files {
+                let related_dest_path = merge_base_with_file(
+                    &movie_directory_path,
+                    &related_file_entry.file_name().to_str().unwrap(),
+                );
+                fs::rename(related_file_entry.path(), related_dest_path)
+                    .expect("Failed to move a related file to the video sub-directory");
             }
-        }
-
-        let video_file_name = video_file_entry
-            .file_name()
-            .to_str()
-            .map(String::from)
-            .unwrap_or_default();
-        let parsed_movie_metadata = parse_to_movie_metadata(&video_file_name);
-        let composed_file_name = format_movie_metadata(&parsed_movie_metadata);
-
-        // create the movie directory
-        let movie_directory_path = merge_base_with_file(&directory_path, &composed_file_name);
-        fs::create_dir(&movie_directory_path).expect("Failed to create the movie directory");
-
-        // rename the files
-        let movie_dest_path = merge_base_with_file(
-            Path::new(&movie_directory_path),
-            &format!(
-                "{}.{}",
-                composed_file_name, &parsed_movie_metadata.file_extension
-            ),
-        );
-        fs::rename(video_file_entry.path(), movie_dest_path)
-            .expect("Failed to rename the movie file");
-
-        if subtitle_entry.is_some() {
-            let sub_dest_path = merge_base_with_file(
-                Path::new(&movie_directory_path),
-                &format!("{}.en.{}", composed_file_name, SUBTITLE_FILE_EXTENSION),
-            );
-            fs::rename(subtitle_entry.unwrap().path(), sub_dest_path)
-                .expect("Failed to rename the subtitle file");
         }
     }
 }

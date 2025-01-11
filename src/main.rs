@@ -1,31 +1,35 @@
-mod utils;
+mod constants;
 mod models;
 mod processors;
-mod constants;
+mod utils;
 
 use std::fs;
+use std::fs::DirEntry;
 use std::path::Path;
 
 fn main() {
-    let directory_path = Path::new("C:\\Users\\bolorundurowb\\Downloads\\tool-sample-media-directory");
+    let directory_path =
+        Path::new("C:\\Users\\bolorundurowb\\Downloads\\tool-sample-media-directory");
 
     if !directory_path.exists() {
         panic!("Specified source path does not exist");
     }
 
-    let mut directories = vec!();
-    let mut files = vec!();
+    let files: Vec<DirEntry> = fs::read_dir(&directory_path)
+        .unwrap()
+        .map(|entry| entry.unwrap())
+        .filter(|entry| entry.path().is_file())
+        .collect();
 
-    for entry in fs::read_dir(directory_path).expect("Failed to read directory") {
-        let entry = entry.expect("Failed to read directory entry");
-
-        if entry.path().is_dir() {
-            directories.push(entry);
-        } else {
-            files.push(entry);
-        }
+    // collect this into directories
+    if files.len() > 0 {
+        processors::files::process_files(&directory_path, files);
     }
 
+    let directories = fs::read_dir(&directory_path)
+        .unwrap()
+        .map(|entry| entry.unwrap())
+        .filter(|entry| entry.path().is_dir())
+        .collect();
     processors::directories::process_directories(directories);
-    processors::files::process_files(&directory_path, files);
 }
