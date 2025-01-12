@@ -1,19 +1,17 @@
 use crate::constants::{METADATA_FILE_NAME, SUBTITLE_FILE_EXTENSION, VIDEO_FILE_EXTENSIONS};
+use crate::imdb::get_imdb_result;
 use crate::models::MovieMetadata;
 use crate::utils::{format_movie_metadata, merge_base_with_file, parse_to_movie_metadata};
 use std::fs::DirEntry;
 use std::io::Write;
 use std::path::Path;
 use std::{fs, io};
-use crate::imdb::get_imdb_result;
 
 pub async fn process_directories(directory_paths: Vec<DirEntry>) {
     for directory in directory_paths {
-        if has_valid_metadata_json(&directory.path()) {
-            continue;
+        if needs_processing(&directory.path()) {
+            process_directory(directory).await;
         }
-
-        process_directory(directory).await;
     }
 }
 
@@ -123,12 +121,26 @@ async fn process_directory(directory_path: DirEntry) {
     }
 }
 
+fn needs_processing(dir_path: &Path) -> bool {
+    if has_valid_metadata_json(dir_path) {
+        let file_count = fs::read_dir(dir_path)
+            .unwrap()
+            .filter_map(Result::ok)
+            .filter(|entry| entry.path().is_file())
+            .count();
+        return file_count < 2;
+    }
+
+    true
+}
+
 fn has_valid_metadata_json(dir_path: &Path) -> bool {
     let metadata_file = dir_path.join(METADATA_FILE_NAME);
 
     if metadata_file.exists() && metadata_file.is_file() {
         if let Ok(file_content) = fs::read_to_string(&metadata_file) {
-            let deserialization_result: serde_json::Result<MovieMetadata> = serde_json::from_str(&file_content);
+            let deserialization_result: serde_json::Result<MovieMetadata> =
+                serde_json::from_str(&file_content);
             return deserialization_result.is_ok();
         }
     }
