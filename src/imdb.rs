@@ -1,5 +1,6 @@
 use scraper::{Html, Selector};
 use std::error::Error;
+use crate::utils::url_encode;
 
 pub struct ImdbResult {
     pub title: String,
@@ -9,7 +10,7 @@ pub struct ImdbResult {
 pub async fn get_imdb_result(movie_name: &str) -> Result<ImdbResult, Box<dyn Error>> {
     let url = format!(
         "https://www.imdb.com/find?q={}&s=tt&ttype=ft&ref_=fn_ft",
-        movie_name
+        url_encode(&movie_name)
     );
 
     let response = reqwest::get(&url).await?.text().await?;

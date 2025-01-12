@@ -1,7 +1,6 @@
-use std::fs::Metadata;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum MediaEncodingFormat {
     X264,
     X265,
@@ -21,7 +20,7 @@ impl MediaEncodingFormat {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct MovieMetadata {
     pub(crate) original_file_name: String,
     pub(crate) media_name: String,
@@ -30,9 +29,5 @@ pub struct MovieMetadata {
     pub(crate) resolution: Option<u16>,
     pub(crate) additional_data: Vec<String>,
     pub(crate) file_extension: String,
-}
-
-pub struct ParsedMovieFileData {
-    file_path: String,
-    metadata: Metadata,
+    pub(crate) imdb_id: Option<String>,
 }

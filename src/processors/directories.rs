@@ -1,18 +1,23 @@
-use crate::constants::{SUBTITLE_FILE_EXTENSION, VIDEO_FILE_EXTENSIONS};
+use crate::constants::{METADATA_FILE_NAME, SUBTITLE_FILE_EXTENSION, VIDEO_FILE_EXTENSIONS};
+use crate::models::MovieMetadata;
 use crate::utils::{format_movie_metadata, merge_base_with_file, parse_to_movie_metadata};
 use std::fs::DirEntry;
+use std::io::Write;
 use std::path::Path;
 use std::{fs, io};
-use std::io::Write;
-use crate::models::MovieMetadata;
+use crate::imdb::get_imdb_result;
 
-pub fn process_directories(directory_paths: Vec<DirEntry>) {
+pub async fn process_directories(directory_paths: Vec<DirEntry>) {
     for directory in directory_paths {
-        process_directory(directory);
+        if has_valid_metadata_json(&directory.path()) {
+            continue;
+        }
+
+        process_directory(directory).await;
     }
 }
 
-fn process_directory(directory_path: DirEntry) {
+async fn process_directory(directory_path: DirEntry) {
     let directory_name = directory_path.file_name();
 
     // if a subtitle is found and is in a nested directory then it should be moved into the root dir
@@ -66,8 +71,8 @@ fn process_directory(directory_path: DirEntry) {
             );
         }
 
-        let parsed_movie_metadata = parse_to_movie_metadata(&video_file_name);
-        let composed_file_name = format_movie_metadata(&parsed_movie_metadata);
+        let mut parsed_movie_metadata = parse_to_movie_metadata(&video_file_name);
+        let mut composed_file_name = format_movie_metadata(&parsed_movie_metadata);
 
         // rename the files
         let movie_dest_path = merge_base_with_file(
@@ -87,10 +92,23 @@ fn process_directory(directory_path: DirEntry) {
             );
             fs::rename(subtitle_entry.unwrap().path(), sub_dest_path)
                 .expect("Failed to rename the subtitle file");
+        } else {
+            // TODO: download the subtitle file
+            let imdb_info = get_imdb_result(&composed_file_name).await;
+
+            if imdb_info.is_ok() {
+                let imdb_info = imdb_info.unwrap();
+                parsed_movie_metadata.media_name = imdb_info.title;
+                parsed_movie_metadata.imdb_id = Some(imdb_info.id);
+
+                // recompose the file name
+                composed_file_name = format_movie_metadata(&parsed_movie_metadata);
+            }
         }
 
         // add the metadata file
-        write_metadata_file(&parsed_movie_metadata, &directory_path.path()).expect("Failed to write movie metadata");
+        write_metadata_file(&parsed_movie_metadata, &directory_path.path())
+            .expect("Failed to write movie metadata");
 
         // rename the folder
         let movie_dir_dest_path =
@@ -105,17 +123,27 @@ fn process_directory(directory_path: DirEntry) {
     }
 }
 
-fn write_metadata_file(
-    data: &MovieMetadata,
-    directory_path: &Path,
-) -> io::Result<()> {
+fn has_valid_metadata_json(dir_path: &Path) -> bool {
+    let metadata_file = dir_path.join(METADATA_FILE_NAME);
+
+    if metadata_file.exists() && metadata_file.is_file() {
+        if let Ok(file_content) = fs::read_to_string(&metadata_file) {
+            let deserialization_result: serde_json::Result<MovieMetadata> = serde_json::from_str(&file_content);
+            return deserialization_result.is_ok();
+        }
+    }
+
+    false
+}
+
+fn write_metadata_file(data: &MovieMetadata, directory_path: &Path) -> io::Result<()> {
     // Ensure the directory exists
     if !directory_path.exists() {
         fs::create_dir_all(directory_path)?;
     }
 
     // Define the file path
-    let file_path = merge_base_with_file(&directory_path, "metadata.json");
+    let file_path = merge_base_with_file(&directory_path, METADATA_FILE_NAME);
     let json_data = serde_json::to_string_pretty(data)
         .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Serialization error: {}", e)))?;
 

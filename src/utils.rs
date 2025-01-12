@@ -1,4 +1,5 @@
 use crate::models::{MediaEncodingFormat, MovieMetadata};
+use percent_encoding::{AsciiSet, NON_ALPHANUMERIC};
 use regex::Regex;
 use std::path::Path;
 
@@ -34,6 +35,17 @@ pub fn get_raw_file_name_and_extension(file_name: &str) -> (&str, String) {
     } else {
         (file_name, String::new())
     }
+}
+
+pub fn url_encode(input: &str) -> String {
+    // Define the character set to *not* encode. This is the "unreserved" set from RFC 3986.
+    const UNRESERVED: AsciiSet = NON_ALPHANUMERIC
+        .remove(b'-')
+        .remove(b'.')
+        .remove(b'_')
+        .remove(b'~');
+
+    percent_encoding::percent_encode(input.as_bytes(), &UNRESERVED).to_string()
 }
 
 fn compose_movie_metadata(raw_file_name: &str, file_extension: String) -> MovieMetadata {
@@ -104,6 +116,7 @@ fn compose_movie_metadata(raw_file_name: &str, file_extension: String) -> MovieM
         resolution,
         additional_data,
         file_extension,
+        imdb_id: None,
     }
 }
 

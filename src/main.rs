@@ -2,6 +2,8 @@ mod constants;
 mod models;
 mod processors;
 mod utils;
+mod imdb;
+mod subtitles;
 
 use std::fs;
 use std::fs::DirEntry;
