@@ -1,5 +1,6 @@
 use crate::constants::VIDEO_FILE_EXTENSIONS;
 use crate::utils::get_raw_file_name_and_extension;
+use inline_colorization::{color_red, color_green, color_reset};
 use std::fs;
 use std::fs::DirEntry;
 use std::path::Path;
@@ -17,16 +18,27 @@ pub fn process_files(directory_path: &Path, file_paths: Vec<DirEntry>) {
         // Create the movie directory
         let movie_directory_path = directory_path.join(raw_video_file_name);
         if let Err(e) = fs::create_dir(&movie_directory_path) {
-            eprintln!("Failed to create the movie sub-directory: {}", e);
+            eprintln!(
+                "{color_red}Failed to create the movie sub-directory: {}{color_reset}",
+                e
+            );
             continue;
         }
 
         // Move the video file to the sub-directory
         let movie_dest_path = movie_directory_path.join(video_file_entry.file_name());
         if let Err(e) = fs::rename(video_file_entry.path(), &movie_dest_path) {
-            eprintln!("Failed to move the movie file to the sub-directory: {}", e);
+            eprintln!(
+                "{color_red}Failed to move the movie file to the sub-directory: {}{color_reset}",
+                e
+            );
             continue;
         }
+
+        println!(
+            "{color_green}Successfully moved video file: {}{color_reset}",
+            raw_video_file_name
+        );
 
         // Find and move related files
         let related_files = find_files_with_same_prefix(
@@ -42,7 +54,12 @@ pub fn process_files(directory_path: &Path, file_paths: Vec<DirEntry>) {
                     .unwrap_or_default(),
             );
             if let Err(e) = fs::rename(related_file_entry.path(), &related_dest_path) {
-                eprintln!("Failed to move a related file to the sub-directory: {}", e);
+                eprintln!("{color_red}Failed to move a related file to the sub-directory: {}{color_reset}", e);
+            } else {
+                println!(
+                    "{color_green}Successfully moved related file: {}{color_reset}",
+                    related_file_entry.file_name().to_string_lossy()
+                );
             }
         }
     }

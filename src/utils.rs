@@ -13,7 +13,7 @@ pub fn merge_base_with_file(base_path: &Path, file_name: &str) -> String {
     merged_path.to_string_lossy().into_owned()
 }
 
-pub fn format_movie_metadata(metadata: &MovieMetadata) -> String {
+pub fn compose_media_name_from_metadata(metadata: &MovieMetadata) -> String {
     let mut result = metadata.media_name.clone();
 
     if let Some(year) = metadata.release_year {
@@ -24,7 +24,7 @@ pub fn format_movie_metadata(metadata: &MovieMetadata) -> String {
         result.push_str(&format!(" [{}p]", resolution));
     }
 
-    result
+    clean_filename(&result).unwrap()
 }
 
 pub fn get_raw_file_name_and_extension(file_name: &str) -> (&str, String) {
@@ -134,4 +134,33 @@ fn to_title_case(input: &str) -> String {
         })
         .collect::<Vec<_>>()
         .join(" ")
+}
+
+fn clean_filename(filename: &str) -> Option<String> {
+    // Reserved Windows names (case-insensitive)
+    let reserved_names = [
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+    ];
+
+    // Invalid characters for both Windows and Linux
+    let invalid_chars: &[char] = &['\0', '/', '\\', '<', '>', ':', '"', '|', '?', '*'];
+
+    // Trim spaces and check for reserved names
+    let cleaned = filename.trim().to_string();
+
+    // If the filename is empty or a reserved name, return `None`
+    if cleaned.is_empty() || reserved_names.iter().any(|&reserved| reserved.eq_ignore_ascii_case(&cleaned)) {
+        return None;
+    }
+
+    // Replace invalid characters with an underscore and truncate to 255 characters
+    let sanitized: String = cleaned
+        .chars()
+        .map(|c| if invalid_chars.contains(&c) { '_' } else { c })
+        .collect();
+
+    // Ensure the cleaned filename length does not exceed 255 characters
+    Some(sanitized.chars().take(255).collect())
 }

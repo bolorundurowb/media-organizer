@@ -1,15 +1,16 @@
 mod constants;
+mod imdb;
 mod models;
 mod processors;
-mod utils;
-mod imdb;
 mod subtitles;
+mod utils;
 
 use std::fs;
 use std::fs::DirEntry;
 use std::path::Path;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let directory_path =
         Path::new("C:\\Users\\bolorundurowb\\Downloads\\tool-sample-media-directory");
 
@@ -33,5 +34,5 @@ fn main() {
         .map(|entry| entry.unwrap())
         .filter(|entry| entry.path().is_dir())
         .collect();
-    processors::directories::process_directories(directories);
+    processors::directories::process_directories(directories).await;
 }
