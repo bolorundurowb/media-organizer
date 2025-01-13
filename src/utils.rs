@@ -158,7 +158,7 @@ fn clean_filename(filename: &str) -> Option<String> {
     // Replace invalid characters with an underscore and truncate to 255 characters
     let sanitized: String = cleaned
         .chars()
-        .map(|c| if invalid_chars.contains(&c) { '_' } else { c })
+        .map(|c| if invalid_chars.contains(&c) { '\0' } else { c })
         .collect();
 
     // Ensure the cleaned filename length does not exceed 255 characters

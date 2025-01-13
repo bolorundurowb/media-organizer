@@ -2,6 +2,7 @@ use scraper::{Html, Selector};
 use std::error::Error;
 use crate::utils::url_encode;
 
+#[derive(Debug)]
 pub struct ImdbResult {
     pub title: String,
     pub id: String,

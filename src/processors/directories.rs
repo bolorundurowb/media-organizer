@@ -1,7 +1,12 @@
 use crate::constants::{METADATA_FILE_NAME, SUBTITLE_FILE_EXTENSION, VIDEO_FILE_EXTENSIONS};
 use crate::imdb::get_imdb_result;
 use crate::models::MovieMetadata;
-use crate::utils::{compose_media_name_from_metadata, merge_base_with_file, parse_to_movie_metadata};
+use crate::utils::{
+    compose_media_name_from_metadata, merge_base_with_file, parse_to_movie_metadata,
+};
+use inline_colorization::{
+    color_blue, color_cyan, color_green, color_magenta, color_reset, color_yellow,
+};
 use std::fs::DirEntry;
 use std::io::Write;
 use std::path::Path;
@@ -10,16 +15,31 @@ use std::{fs, io};
 pub async fn process_directories(directory_paths: Vec<DirEntry>) {
     for directory in directory_paths {
         if needs_processing(&directory.path()) {
+            println!(
+                "{color_green}Processing directory: {:?}{color_reset}",
+                directory.path()
+            );
             process_directory(directory).await;
+        } else {
+            println!(
+                "{color_yellow}Skipping directory: {:?}{color_reset}",
+                directory.path()
+            );
         }
     }
+
+    println!("{color_green}Done processing directories{color_reset}");
 }
 
 async fn process_directory(directory_path: DirEntry) {
     let directory_name = directory_path.file_name();
+    println!("{color_blue}Processing: {:?}{color_reset}", directory_name);
 
-    // if a subtitle is found and is in a nested directory then it should be moved into the root dir
     if let Some(sub_file_entry) = get_subtitle_entry(&directory_path) {
+        println!(
+            "{color_cyan}Found subtitle file: {:?}{color_reset}",
+            sub_file_entry.path()
+        );
         let subtitle_exists_in_movie_dir = fs::read_dir(directory_path.path())
             .ok()
             .and_then(|entries| {
@@ -35,17 +55,25 @@ async fn process_directory(directory_path: DirEntry) {
             let target_path = directory_path.path().join(sub_file_entry.file_name());
             fs::copy(sub_file_entry.path(), &target_path)
                 .expect("Failed to copy subtitle file to root directory");
+            println!(
+                "{color_green}Copied subtitle to root directory: {:?}{color_reset}",
+                target_path
+            );
         }
     }
 
     if let Some(video_file_entry) = get_video_file_entry(&directory_path.path()) {
+        println!(
+            "{color_magenta}Found video file: {:?}{color_reset}",
+            video_file_entry.path()
+        );
+
         let subtitle_entry = get_subtitle_entry(&directory_path);
 
-        // delete every file except the movie and its subtitle
         delete_except(directory_path.path(), &video_file_entry, &subtitle_entry)
             .expect("Failed to clean movie directory");
+        println!("{color_yellow}Cleaned up directory{color_reset}");
 
-        // determine name to be parsed
         let mut video_file_name = video_file_entry
             .file_name()
             .to_str()
@@ -72,7 +100,6 @@ async fn process_directory(directory_path: DirEntry) {
         let mut parsed_movie_metadata = parse_to_movie_metadata(&video_file_name);
         let mut composed_file_name = compose_media_name_from_metadata(&parsed_movie_metadata);
 
-        // rename the files
         let movie_dest_path = merge_base_with_file(
             &directory_path.path(),
             &format!(
@@ -80,43 +107,54 @@ async fn process_directory(directory_path: DirEntry) {
                 composed_file_name, &parsed_movie_metadata.file_extension
             ),
         );
-        fs::rename(video_file_entry.path(), movie_dest_path)
+        fs::rename(video_file_entry.path(), &movie_dest_path)
             .expect("Failed to rename the movie file");
+        println!(
+            "{color_green}Renamed movie file to: {:?}{color_reset}",
+            movie_dest_path
+        );
 
-        if subtitle_entry.is_some() {
+        if let Some(subtitle) = subtitle_entry {
             let sub_dest_path = merge_base_with_file(
                 &directory_path.path(),
                 &format!("{}.en.{}", composed_file_name, SUBTITLE_FILE_EXTENSION),
             );
-            fs::rename(subtitle_entry.unwrap().path(), sub_dest_path)
+            fs::rename(subtitle.path(), &sub_dest_path)
                 .expect("Failed to rename the subtitle file");
+            println!(
+                "{color_green}Renamed subtitle file to: {:?}{color_reset}",
+                sub_dest_path
+            );
         } else {
-            // retrieve imdb info
             let imdb_info = get_imdb_result(&composed_file_name).await;
 
-            if imdb_info.is_ok() {
-                let imdb_info = imdb_info.unwrap();
-                parsed_movie_metadata.media_name = imdb_info.title;
-                parsed_movie_metadata.imdb_id = Some(imdb_info.id);
-
-                // recompose the file name
+            if let Ok(info) = imdb_info {
+                parsed_movie_metadata.media_name = info.title.to_string();
+                parsed_movie_metadata.imdb_id = Some(info.id.to_string());
                 composed_file_name = compose_media_name_from_metadata(&parsed_movie_metadata);
+                println!(
+                    "{color_cyan}Updated metadata from IMDb: {:?}{color_reset}",
+                    &info
+                );
             }
         }
 
-        // add the metadata file
         write_metadata_file(&parsed_movie_metadata, &directory_path.path())
             .expect("Failed to write movie metadata");
+        println!("{color_green}Metadata file created{color_reset}");
 
-        // rename the folder
         let movie_dir_dest_path =
             merge_base_with_file(directory_path.path().parent().unwrap(), &composed_file_name);
         fs::rename(directory_path.path(), &movie_dir_dest_path).expect(
             format!(
-                "Failed to rename the movie directory {}",
-                &movie_dir_dest_path
+                "Failed to rename the movie directory {:?}",
+                movie_dir_dest_path
             )
             .as_str(),
+        );
+        println!(
+            "{color_blue}Renamed directory to: {:?}{color_reset}",
+            movie_dir_dest_path
         );
     }
 }
