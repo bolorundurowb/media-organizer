@@ -12,7 +12,8 @@ use std::path::Path;
 #[tokio::main]
 async fn main() {
     let directory_path =
-        Path::new("C:\\Users\\bolorundurowb\\Downloads\\tool-sample-media-directory");
+        // Path::new("C:\\Users\\bolorundurowb\\Downloads\\tool-sample-media-directory");
+        Path::new("\\\\bolorundurology\\Media\\Movies");
 
     if !directory_path.exists() {
         panic!("Specified source path does not exist");

@@ -210,19 +210,30 @@ fn delete_except<P: AsRef<Path>>(
     optional_keep: &Option<DirEntry>,
 ) -> io::Result<()> {
     for entry_result in fs::read_dir(&dir)? {
-        let entry = entry_result?;
+        let entry = match entry_result {
+            Ok(entry) => entry,
+            Err(err) => {
+                eprintln!("Failed to read directory entry: {}", err);
+                continue;
+            }
+        };
+
         let path = entry.path();
 
-        // check if this is a file/directory to keep
+        // Check if this is a file/directory to keep
         if path == keep.path() || optional_keep.as_ref().map_or(false, |e| e.path() == path) {
             continue;
         }
 
-        // delete directories recursively or files
-        if path.is_dir() {
-            fs::remove_dir_all(&path)?;
+        // Attempt to delete directories recursively or files, logging on failure
+        let delete_result = if path.is_dir() {
+            fs::remove_dir_all(&path)
         } else {
-            fs::remove_file(&path)?;
+            fs::remove_file(&path)
+        };
+
+        if let Err(err) = delete_result {
+            eprintln!("Failed to delete {:?}: {}", path, err);
         }
     }
 
