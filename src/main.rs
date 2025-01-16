@@ -20,7 +20,8 @@ async fn main() {
         return;
     }
 
-    let directory_path = Path::new(&directory_opt.unwrap());
+    let directory = directory_opt.map(String::from).unwrap();
+    let directory_path = Path::new(&directory);
     if !directory_path.exists() {
         panic!("Specified source path does not exist");
     }
