@@ -1,5 +1,6 @@
 use scraper::{Html, Selector};
 use std::error::Error;
+use crate::constants::SCRAPER_USER_AGENT;
 use crate::utils::url_encode;
 
 #[derive(Debug)]
@@ -14,7 +15,10 @@ pub async fn get_imdb_result(movie_name: &str) -> Result<ImdbResult, Box<dyn Err
         url_encode(&movie_name)
     );
 
-    let response = reqwest::get(&url).await?.text().await?;
+    let client = reqwest::Client::builder()
+        .user_agent(SCRAPER_USER_AGENT)
+        .build()?;
+    let response = client.get(&url).send().await?.text().await?;
     let document = Html::parse_document(&response);
 
     let selector = Selector::parse(".ipc-metadata-list-summary-item__tc a").unwrap();
