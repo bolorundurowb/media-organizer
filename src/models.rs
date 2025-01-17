@@ -1,5 +1,20 @@
 use serde::{Deserialize, Serialize};
 
+pub enum OrganizerMode {
+    Movies,
+    TvShows,
+}
+
+impl From<String> for OrganizerMode {
+    fn from(value: String) -> Self {
+        match value.to_lowercase().as_str() {
+            "movies" => OrganizerMode::Movies,
+            "tvshows" => OrganizerMode::TvShows,
+            _ => panic!("Unknown organizer mode: {}", value),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub enum MediaEncodingFormat {
     X264,

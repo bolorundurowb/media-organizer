@@ -25,7 +25,7 @@ pub async fn get_imdb_result(movie_name: &str) -> Result<ImdbResult, Box<dyn Err
     if let Some(element) = document.select(&selector).next() {
         let title = element.text().collect::<String>().trim().to_string();
         if let Some(href) = element.value().attr("href") {
-            // Extract the ID from the href
+            // extract the ID from the href
             if let Some(id_start) = href.find("/title/") {
                 let id_end = href[id_start + 7..].find('/').unwrap_or(href.len());
                 let id = &href[id_start + 7..id_start + 7 + id_end];

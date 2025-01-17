@@ -1,22 +1,31 @@
 mod constants;
 mod imdb;
 mod models;
-mod processors;
+mod movie_processors;
 mod subtitles;
 mod utils;
+mod movies;
 
 use std::env::args;
 use std::fs;
-use std::fs::DirEntry;
 use std::path::Path;
-use inline_colorization::{color_blue, color_green, color_reset};
+use inline_colorization::{color_green, color_reset, color_yellow, color_cyan};
+use crate::models::OrganizerMode;
+use crate::movies::handle_movies;
 
 #[tokio::main]
 async fn main() {
-    let directory_opt = args().nth(1);
+    let command_opt = args().nth(1);
+
+    if command_opt.is_none() {
+        print_help();
+        return;
+    }
+
+    let directory_opt = args().nth(2);
 
     if directory_opt.is_none() {
-        println!("{color_blue}Usage: media-organizer{color_reset} {color_green}[directory]{color_reset}");
+        print_help();
         return;
     }
 
@@ -26,21 +35,27 @@ async fn main() {
         panic!("Specified source path does not exist");
     }
 
-    let files: Vec<DirEntry> = fs::read_dir(&directory_path)
-        .unwrap()
-        .map(|entry| entry.unwrap())
-        .filter(|entry| entry.path().is_file())
-        .collect();
+    let command = command_opt.map(OrganizerMode::from).unwrap();
+    let dir_entries = fs::read_dir(&directory_path).unwrap();
 
-    // collect this into directories
-    if files.len() > 0 {
-        processors::files::process_files(&directory_path, files);
+    match command {
+        OrganizerMode::Movies => {
+            handle_movies(&directory_path, dir_entries).await;
+        }
+        OrganizerMode::TvShows => {
+            println!("{color_yellow}Tv Shows coming soon{color_reset}");
+        }
     }
+}
 
-    let directories = fs::read_dir(&directory_path)
-        .unwrap()
-        .map(|entry| entry.unwrap())
-        .filter(|entry| entry.path().is_dir())
-        .collect();
-    processors::directories::process_directories(directories).await;
+fn print_help() {
+    println!("Welcome to Media Organizer");
+    println!();
+    println!("{color_green}Usage:{color_reset} {color_cyan}media-organizer [command] [directory path]{color_reset}");
+    println!();
+    println!("{color_green}Commands:{color_reset}");
+    println!("     {color_cyan}movies{color_reset}           Reorganize your movie directory");
+    println!("     {color_cyan}tvshows{color_reset}          Reorganize your TV Series directory");
+    println!(" {color_cyan}-h, --help{color_reset}           Print help");
+    println!();
 }
