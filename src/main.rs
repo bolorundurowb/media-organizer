@@ -5,13 +5,15 @@ mod movie_processors;
 mod subtitles;
 mod utils;
 mod movies;
+mod tv_shows_processors;
 
 use std::env::args;
 use std::fs;
 use std::path::Path;
-use inline_colorization::{color_green, color_reset, color_yellow, color_cyan};
+use inline_colorization::{color_green, color_reset, color_cyan};
 use crate::models::OrganizerMode;
 use crate::movies::handle_movies;
+use crate::tv_shows_processors::directories::handle_tv_shows;
 
 #[tokio::main]
 async fn main() {
@@ -43,7 +45,7 @@ async fn main() {
             handle_movies(&directory_path, dir_entries).await;
         }
         OrganizerMode::TvShows => {
-            println!("{color_yellow}Tv Shows coming soon{color_reset}");
+            handle_tv_shows(&directory_path, dir_entries).await;
         }
     }
 }
