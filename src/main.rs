@@ -6,6 +6,7 @@ mod subtitles;
 mod utils;
 mod movies;
 mod tv_shows_processors;
+mod tv_shows;
 
 use std::env::args;
 use std::fs;
@@ -13,7 +14,7 @@ use std::path::Path;
 use inline_colorization::{color_green, color_reset, color_cyan};
 use crate::models::OrganizerMode;
 use crate::movies::handle_movies;
-use crate::tv_shows_processors::directories::handle_tv_shows;
+use crate::tv_shows::handle_tv_shows;
 
 #[tokio::main]
 async fn main() {
@@ -39,6 +40,10 @@ async fn main() {
 
     let command = command_opt.map(OrganizerMode::from).unwrap();
     let dir_entries = fs::read_dir(&directory_path).unwrap();
+
+    println!();
+    println!("Processing media directory: '{}'", &directory_path.to_string_lossy());
+    println!();
 
     match command {
         OrganizerMode::Movies => {

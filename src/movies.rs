@@ -1,11 +1,11 @@
 use std::fs;
-use std::fs::ReadDir;
+use std::fs::{DirEntry, ReadDir};
 use std::path::Path;
 use inline_colorization::{color_yellow, color_reset};
 use crate::movie_processors;
 
 pub async fn handle_movies(directory_path: &Path, dir_entries: ReadDir) {
-    let files: Vec<fs::DirEntry> = dir_entries
+    let files: Vec<DirEntry> = dir_entries
         .map(|entry| entry.unwrap())
         .filter(|entry| entry.path().is_file())
         .collect();

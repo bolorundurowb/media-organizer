@@ -12,8 +12,8 @@ use std::io::Write;
 use std::path::Path;
 use std::{fs, io};
 
-pub async fn process_directories(directory_paths: Vec<DirEntry>) {
-    for directory in directory_paths {
+pub async fn process_directories(directory_entries: Vec<DirEntry>) {
+    for directory in directory_entries {
         if needs_processing(&directory.path()) {
             println!(
                 "{color_green}Processing directory: {:?}{color_reset}",
